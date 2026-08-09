@@ -3,6 +3,8 @@ name: Build Hotspot Dashboard IPA
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'Builds/**'
   workflow_dispatch:
 
 permissions:
@@ -64,3 +66,16 @@ jobs:
               --title "Hotspot Dashboard - Sideloadly IPA" \
               --notes "Unsigned IPA built by GitHub Actions. Use Sideloadly to sign and install it."
           fi
+
+      - name: Save direct IPA in repository
+        run: |
+          set -euxo pipefail
+          mkdir -p Builds
+          cp HotspotDashboard.ipa Builds/HotspotDashboard.ipa
+          printf 'Successful unsigned IPA build from commit %s\n' "$GITHUB_SHA" > Builds/build-status.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- Builds/HotspotDashboard.ipa Builds/build-status.txt
+          git commit -m "Update built IPA [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
